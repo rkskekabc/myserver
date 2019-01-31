@@ -26,7 +26,7 @@ public class Request {
             String wholeUrl = statusText[1];
 
             this.method = statusText[0];
-            this.url = wholeUrl.indexOf("?") == -1 ? wholeUrl : wholeUrl.substring(0, wholeUrl.indexOf("?"));
+            this.url = wholeUrl.contains("?") ? wholeUrl.substring(0, wholeUrl.indexOf("?")) : wholeUrl;
             this.version = statusText[2];
 
             String httpBody = "";
@@ -35,17 +35,17 @@ public class Request {
             for(int i=1; i<fullText.length; i++){
                 if(headerOrBody == 0) {
                     int colonLocation = fullText[i].indexOf(":");
-                    if (fullText[i].equals("\r\n")) {
+                    if (fullText[i].equals("")) {
                         headerOrBody = 1;
-                        continue;
+                    } else {
+                        headerMap.put(fullText[i].substring(0, colonLocation).trim(), fullText[i].substring(colonLocation+1).trim());
                     }
-                    headerMap.put(fullText[i].substring(0, colonLocation).trim(), fullText[i].substring(colonLocation+1).trim());
                 } else {
                     httpBody = fullText[i];
                 }
             }
 
-            if(this.method.equals("GET") && wholeUrl.indexOf("?") != -1){
+            if(this.method.equals("GET") && wholeUrl.contains("?")){
                 paramMap = parseParameter(wholeUrl.substring(wholeUrl.indexOf("?") + 1));
             } else if(this.method.equals("POST") && !httpBody.isEmpty()) {
                 paramMap = parseParameter(httpBody);
@@ -53,6 +53,7 @@ public class Request {
 
             stringStatus = "good";
         } catch(Exception e){
+            e.printStackTrace();
             stringStatus = "bad";
         }
     }
@@ -85,11 +86,11 @@ public class Request {
         return version;
     }
 
-    public HashMap<String, String> getHeaderMap() {
-        return headerMap;
+    public String getHeaderMap(String key) {
+        return headerMap.get(key);
     }
 
-    public HashMap<String, String> getParamMap() {
-        return paramMap;
+    public String getParamMap(String key) {
+        return paramMap.get(key);
     }
 }
