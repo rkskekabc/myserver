@@ -1,12 +1,12 @@
 package http;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,41 +20,69 @@ public class CreateResponse {
         Request req = new Request(httpString);
 
         if (req.getUrl().equals("/")){
-            String html = getHtml("/index");
+            byte[] html = getFile(fullHtmlPath("/index"));
             return new Response(200, "text/html", html);
         } else if(req.getUrl().equals("/downloadDesert")) {
-            String file = getFile("/Desert.jpg");
+            byte[] file = getFile(fullFilePath("/Desert.jpg"));
             return new Response(200, "image/jpeg", file);
-        } else if (Files.notExists(Paths.get(HTMLPATH + req.getUrl() + FOOTER))) {
-            String html = getHtml("/errorPage/error404");
+        } else if (Files.notExists(Paths.get(fullHtmlPath(req.getUrl())))) {
+            byte[] html = getFile(fullHtmlPath("/errorPage/error404"));
             return new Response(404, "text/html", html);
         } else {
-            String html = getHtml(req.getUrl());
-            return new Response(200, "text/html", changeHtml(req, html));
+            byte[] html = getFile(fullHtmlPath(req.getUrl()));
+            return new Response(200, "text/html", changeHtml(req, new String(html, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
         }
     }
 
-    public static String getHtml(String htmlName){
+    private static String fullHtmlPath(String url){
+        return HTMLPATH + url + FOOTER;
+    }
+
+    private static String fullFilePath(String fileName){
+        return FILEPATH + fileName;
+    }
+
+//    public static String getHtml(String htmlName){
+//        try {
+//            InputStream htmlInputStream = new FileInputStream(HTMLPATH + htmlName + FOOTER);
+//            BufferedInputStream bufferedHtmlInputStream = new BufferedInputStream(htmlInputStream, 1024);
+//            byte[] htmlByte = new byte[4096];
+//            int htmlLen = bufferedHtmlInputStream.read(htmlByte);
+//
+//            String returnHtml = new String(htmlByte, 0, htmlLen, StandardCharsets.UTF_8);
+//            bufferedHtmlInputStream.close();
+//            htmlInputStream.close();
+//
+//            return returnHtml;
+//        } catch (Exception e){
+//            e.printStackTrace();
+//            return "error";
+//        }
+//    }
+
+    public static byte[] getFile(String fileName){
         try {
-            InputStream htmlInputStream = new FileInputStream(HTMLPATH + htmlName + FOOTER);
-            BufferedInputStream bufferedHtmlInputStream = new BufferedInputStream(htmlInputStream, 1024);
-            byte[] htmlByte = new byte[4096];
-            int htmlLen = bufferedHtmlInputStream.read(htmlByte);
+            File file = new File(fileName);
+            long fileSize = file.length();
 
-            String returnHtml = new String(htmlByte, 0, htmlLen, StandardCharsets.UTF_8);
-            bufferedHtmlInputStream.close();
-            htmlInputStream.close();
+            InputStream fileInputStream = new FileInputStream(fileName);
+            BufferedInputStream bufferedFileInputStream = new BufferedInputStream(fileInputStream, 1024);
+            byte[] fileByte = new byte[(int)fileSize];
 
-            return returnHtml;
+            bufferedFileInputStream.read(fileByte);
+
+            bufferedFileInputStream.close();
+            fileInputStream.close();
+
+            return fileByte;
         } catch (Exception e){
             e.printStackTrace();
-            return "error";
+            return null;
         }
     }
 
     private static String changeHtml(Request req, String htmlString){
-        System.out.println("change start");
-        Pattern myPattern = Pattern.compile("\\{- *[a-z0-9]+ *-\\}");
+        Pattern myPattern = Pattern.compile("\\{- *[a-z0-9]+ *-}");
         Matcher myMatcher = myPattern.matcher(htmlString);
 
         String returnString = htmlString;
@@ -62,27 +90,6 @@ public class CreateResponse {
             String key = myMatcher.group().replace("{-", "").replace("-}", "").trim();
             returnString = returnString.replace(myMatcher.group(), req.getParamMap(key) == null ? "" : req.getParamMap(key));
         }
-        System.out.println("change end");
         return returnString;
-    }
-
-    public static String getFile(String fileName){
-        try {
-            InputStream fileInputStream = new FileInputStream(FILEPATH + fileName);
-            BufferedInputStream bufferedFileInputStream = new BufferedInputStream(fileInputStream, 1024);
-            byte[] fileByte = new byte[4096];
-            int fileLen = bufferedFileInputStream.read(fileByte);
-
-            byte[] fileEncode = Base64.getEncoder().encode(fileByte);
-
-            String returnFile = new String(fileEncode);
-            bufferedFileInputStream.close();
-            fileInputStream.close();
-
-            return returnFile;
-        } catch (Exception e){
-            e.printStackTrace();
-            return "error";
-        }
     }
 }

@@ -21,27 +21,30 @@ public class ServerThread extends Thread {
             InputStream socketInputStream = socket.getInputStream();
             OutputStream socketOutputStream = socket.getOutputStream();
             byte[] inputBytes = new byte[2048];
-            while (true) {
+//            while (true) {
                 int inputLen = socketInputStream.read(inputBytes);
                 if(inputLen == -1){     // 자꾸 어디선가 요청 오는데 대체 어디냐
                     socketOutputStream.write("error".getBytes(StandardCharsets.UTF_8));
                     socketOutputStream.flush();
-                    break;
+//                    break;
                 } else {
                     Response response = CreateResponse.createResponse(new String(inputBytes, 0, inputLen, StandardCharsets.UTF_8));
-                    socketOutputStream.write(response.getHttpResponse().getBytes(StandardCharsets.UTF_8));
+                    response.send(socketOutputStream);
                     socketOutputStream.flush();
-                    //break;      // 클라이언트 종료 신호 받는법 찾아야함
+//                    break;      // 클라이언트 종료 신호 ?
                 }
-            }
+//            }
 
             socketInputStream.close();
             socketOutputStream.close();
         } catch(Exception e){
             try {
                 OutputStream socketOutputStream = socket.getOutputStream();
-                Response response = new Response(500, "text/html", CreateResponse.getHtml("/errorPage/error500"));
-                socketOutputStream.write(response.getHttpResponse().getBytes(StandardCharsets.UTF_8));
+                Response response = new Response(500, "text/html", CreateResponse.getFile(CreateResponse.HTMLPATH + "/errorPage/error500" + CreateResponse.FOOTER));
+                response.send(socketOutputStream);
+                socketOutputStream.flush();
+
+                socketOutputStream.close();
             } catch(Exception e2){
                 e.printStackTrace();
             }

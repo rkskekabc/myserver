@@ -1,13 +1,17 @@
 package http;
 
-public class Response {
-    private String httpResponse;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
-    public Response(int httpStatus, String contentType, String body){
+public class Response {
+    private String httpHeader;
+    private byte[] body;
+
+    public Response(int httpStatus, String contentType, byte[] body){
         StringBuilder responseBuilder = new StringBuilder();
         setHeader(httpStatus, contentType, responseBuilder);
-        responseBuilder.append(body);
-        httpResponse = responseBuilder.toString();
+        httpHeader = responseBuilder.toString();
+        this.body = body;
     }
 
     private void setHeader(int httpStatus, String contentType, StringBuilder responseBuilder){
@@ -32,7 +36,16 @@ public class Response {
         responseBuilder.append("\r\n");
     }
 
-    public String getHttpResponse() {
-        return httpResponse;
+    public void send(OutputStream outputStream) throws Exception {
+        outputStream.write(this.httpHeader.getBytes(StandardCharsets.UTF_8));
+        outputStream.write(body);
+    }
+
+    public String getHttpHeader() {
+        return httpHeader;
+    }
+
+    public byte[] getBody() {
+        return body;
     }
 }
