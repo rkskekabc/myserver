@@ -1,5 +1,6 @@
 package http;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Request {
@@ -34,16 +35,13 @@ public class Request {
 
             String httpBody = "";
 
-            int headerOrBody = 0;
+            int divideIndex = Arrays.asList(fullText).indexOf("");
             for(int i=1; i<fullText.length; i++){
-                if(headerOrBody == 0) {
+                if(i < divideIndex) {
                     int colonLocation = fullText[i].indexOf(":");
-                    if (fullText[i].equals("")) {
-                        headerOrBody = 1;
-                    } else {
-                        headerMap.put(fullText[i].substring(0, colonLocation).trim(), fullText[i].substring(colonLocation+1).trim());
-                    }
-                } else {
+                    headerMap.put(fullText[i].substring(0, colonLocation).trim(), fullText[i].substring(colonLocation+1).trim());
+                } else if(i == divideIndex + 1) {
+                    System.out.println("body!");
                     httpBody = fullText[i];
                 }
             }
