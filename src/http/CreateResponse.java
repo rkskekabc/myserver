@@ -16,22 +16,36 @@ public class CreateResponse {
 
     public final static String FILEPATH = "./examplefiles";
 
+    public final static String ERROR400 = "/errorPage/error400";
+    public final static String ERROR404 = "/errorPage/error404";
+    public final static String ERROR500 = "/errorPage/error500";
+
+    public final static String INDEX_PAGE = "/index";
+
     public static Response createResponse(String httpString){
         Request req = new Request(httpString);
 
-        if (req.getUrl().equals("/")){
-            byte[] html = getFile(fullHtmlPath("/index"));
-            return new Response(200, "text/html", html);
-        } else if(req.getUrl().equals("/downloadDesert")) {
-            byte[] file = getFile(fullFilePath("/Desert.jpg"));
-            return new Response(200, "image/jpeg", file);
-        } else if (Files.notExists(Paths.get(fullHtmlPath(req.getUrl())))) {
-            byte[] html = getFile(fullHtmlPath("/errorPage/error404"));
-            return new Response(404, "text/html", html);
+        if(req.getStringStatus().equals(Request.BAD_REQUEST)){
+            byte[] body = getFile(fullHtmlPath(ERROR400));
+            return new Response(Response.BAD_REQUEST, "text/html", body);
+        } else if (Files.notExists(Paths.get(fullHtmlPath(req.getUrl()))) && Files.notExists(Paths.get(fullFilePath(req.getUrl())))) {
+            byte[] body = getFile(fullHtmlPath(ERROR404));
+            return new Response(Response.NOT_FOUND, "text/html", body);
+        } else if(req.getUrl().endsWith(".jpg")) {
+            byte[] body = getFile(fullFilePath(req.getUrl()));
+            return new Response(Response.OK, "image/jpg", body);
+        } else if (req.getUrl().equals("/")){
+            byte[] body = getFile(fullHtmlPath(INDEX_PAGE));
+            return new Response(Response.OK, "text/html", body);
         } else {
-            byte[] html = getFile(fullHtmlPath(req.getUrl()));
-            return new Response(200, "text/html", changeHtml(req, new String(html, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
+            byte[] body = getFile(fullHtmlPath(req.getUrl()));
+            return new Response(Response.OK, "text/html", changeHtml(req, new String(body, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    public static Response createServerErrorResponse(){
+        byte[] body = getFile(fullHtmlPath(ERROR500));
+        return new Response(Response.INTERNAL_SERVER_ERROR, "text/html", body);
     }
 
     private static String fullHtmlPath(String url){
@@ -41,24 +55,6 @@ public class CreateResponse {
     private static String fullFilePath(String fileName){
         return FILEPATH + fileName;
     }
-
-//    public static String getHtml(String htmlName){
-//        try {
-//            InputStream htmlInputStream = new FileInputStream(HTMLPATH + htmlName + FOOTER);
-//            BufferedInputStream bufferedHtmlInputStream = new BufferedInputStream(htmlInputStream, 1024);
-//            byte[] htmlByte = new byte[4096];
-//            int htmlLen = bufferedHtmlInputStream.read(htmlByte);
-//
-//            String returnHtml = new String(htmlByte, 0, htmlLen, StandardCharsets.UTF_8);
-//            bufferedHtmlInputStream.close();
-//            htmlInputStream.close();
-//
-//            return returnHtml;
-//        } catch (Exception e){
-//            e.printStackTrace();
-//            return "error";
-//        }
-//    }
 
     public static byte[] getFile(String fileName){
         try {

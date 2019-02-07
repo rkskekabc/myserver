@@ -3,6 +3,9 @@ package http;
 import java.util.HashMap;
 
 public class Request {
+    public static final String OK = "OK";
+    public static final String BAD_REQUEST = "BAD REQUEST";
+
     private String stringStatus;
 
     private String method;
@@ -45,16 +48,16 @@ public class Request {
                 }
             }
 
-            if(this.method.equals("GET") && wholeUrl.contains("?")){
-                paramMap = parseParameter(wholeUrl.substring(wholeUrl.indexOf("?") + 1));
-            } else if(this.method.equals("POST") && !httpBody.isEmpty()) {
-                paramMap = parseParameter(httpBody);
+            if(wholeUrl.contains("?")){
+                paramMap.putAll(parseParameter(wholeUrl.substring(wholeUrl.indexOf("?") + 1)));
+            } else if(!httpBody.isEmpty()) {
+                paramMap.putAll(parseParameter(httpBody));
             }
 
-            stringStatus = "good";
+            stringStatus = OK;
         } catch(Exception e){
             e.printStackTrace();
-            stringStatus = "bad";
+            stringStatus = BAD_REQUEST;
         }
     }
 

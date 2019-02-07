@@ -15,40 +15,35 @@ public class ServerThread extends Thread {
         this.socket = socket;
     }
 
+
     @Override
     public void run() {
-        try {
-            InputStream socketInputStream = socket.getInputStream();
-            OutputStream socketOutputStream = socket.getOutputStream();
-            byte[] inputBytes = new byte[2048];
-//            while (true) {
-                int inputLen = socketInputStream.read(inputBytes);
-                if(inputLen == -1){     // 자꾸 어디선가 요청 오는데 대체 어디냐
-                    socketOutputStream.write("error".getBytes(StandardCharsets.UTF_8));
-                    socketOutputStream.flush();
-//                    break;
-                } else {
-                    Response response = CreateResponse.createResponse(new String(inputBytes, 0, inputLen, StandardCharsets.UTF_8));
-                    response.send(socketOutputStream);
-                    socketOutputStream.flush();
-//                    break;      // 클라이언트 종료 신호 ?
-                }
-//            }
+        try(InputStream socketInputStream = socket.getInputStream();
+            OutputStream socketOutputStream = socket.getOutputStream()) {
 
-            socketInputStream.close();
-            socketOutputStream.close();
-        } catch(Exception e){
-            try {
-                OutputStream socketOutputStream = socket.getOutputStream();
-                Response response = new Response(500, "text/html", CreateResponse.getFile(CreateResponse.HTMLPATH + "/errorPage/error500" + CreateResponse.FOOTER));
+            byte[] inputBytes = new byte[2048];
+
+            int inputLen = socketInputStream.read(inputBytes);
+
+            if(inputLen == -1){
+                socketOutputStream.write("error".getBytes(StandardCharsets.UTF_8));
+                socketOutputStream.flush();
+            } else {
+                Response response = CreateResponse.createResponse(new String(inputBytes, 0, inputLen, StandardCharsets.UTF_8));
                 response.send(socketOutputStream);
                 socketOutputStream.flush();
-
-                socketOutputStream.close();
-            } catch(Exception e2){
-                e.printStackTrace();
             }
-            e.printStackTrace();
+
+        } catch(Exception e){
+            try(OutputStream socketOutputStream = socket.getOutputStream()) {
+                Response response = CreateResponse.createServerErrorResponse();
+                response.send(socketOutputStream);
+                socketOutputStream.flush();
+                e.printStackTrace();
+            } catch(Exception e2){
+                e2.printStackTrace();
+            }
+
             try {
                 socket.close();
             } catch (Exception e3) {
