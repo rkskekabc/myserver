@@ -28,15 +28,15 @@ public class CreateResponse {
         if(req.getStringStatus().equals(Request.BAD_REQUEST)){
             byte[] body = getFile(fullHtmlPath(ERROR400));
             return new Response(Response.BAD_REQUEST, "text/html", body);
+        } else if (req.getUrl().equals("/")){
+            byte[] body = getFile(fullHtmlPath(INDEX_PAGE));
+            return new Response(Response.OK, "text/html", body);
         } else if (Files.notExists(Paths.get(fullHtmlPath(req.getUrl()))) && Files.notExists(Paths.get(fullFilePath(req.getUrl())))) {
             byte[] body = getFile(fullHtmlPath(ERROR404));
             return new Response(Response.NOT_FOUND, "text/html", body);
         } else if(req.getUrl().endsWith(".jpg")) {
             byte[] body = getFile(fullFilePath(req.getUrl()));
             return new Response(Response.OK, "image/jpg", body);
-        } else if (req.getUrl().equals("/")){
-            byte[] body = getFile(fullHtmlPath(INDEX_PAGE));
-            return new Response(Response.OK, "text/html", body);
         } else {
             byte[] body = getFile(fullHtmlPath(req.getUrl()));
             return new Response(Response.OK, "text/html", changeHtml(req, new String(body, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));

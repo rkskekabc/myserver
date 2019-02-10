@@ -24,7 +24,7 @@ public class ServerThread extends Thread {
             byte[] inputBytes = new byte[2048];
 
             int inputLen = socketInputStream.read(inputBytes);
-
+            System.out.println(new String(inputBytes, StandardCharsets.UTF_8));
             if(inputLen == -1){
                 socketOutputStream.write("error".getBytes(StandardCharsets.UTF_8));
                 socketOutputStream.flush();
